@@ -2,6 +2,7 @@ const request = require('request');
 const config  = require('../auth/config');
 const User    = require('../model/instagram-user');
 const jwt     = require('jsonwebtoken');
+const async   = require('async');
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // get home page
@@ -48,37 +49,51 @@ module.exports.postInstagramLogin = (req, res) => {
 	        });
 	    }
 
-		let query = User.findOne({'username': instagramData.user.username});
+	    async.waterfall([
+	    	// find if instagram user already exist to database
+	      	(callback) => {
+	      		let query = User.findOne({'username': instagramData.user.username});
 
-		query.exec((err, profiles) => {
-			if(profiles){
-				const token = jwt.sign(instagramData, process.env.jwt_secret, { expiresIn: '5h' });
-				res.cookie('instagram-user-cookies', token);
+	      		query.exec((err, profiles) => {
+	      			callback(err, profiles);
+	      		});
+	      	// add instagram user to database
+	      	}, (profiles, callback) => {
+	      		// create token
+	      		const token = jwt.sign(instagramData, process.env.jwt_secret, { expiresIn: '5h' });
+	      		res.cookie('instagram-user-cookies', token);
 
-				return res.redirect('/api/profile');
-			}
+	          	if(profiles){
+	          		callback(null, profiles)
+	          	}
 
-			if(!profiles){
-				let user = {
-					'id'              : instagramData.user.id,
-					'username'        : instagramData.user.username,
-					'full_name'       : instagramData.user.full_name,
-					'bio'             : instagramData.user.bio,
-					'website'         : instagramData.user.website,
-					'profile_picture' : instagramData.user.profile_picture,
-					'access_token'    : instagramData.access_token
-				};
+	          	if(!profiles){
+	          		let user = {
+	          			'id'              : instagramData.user.id,
+	          			'username'        : instagramData.user.username,
+	          			'full_name'       : instagramData.user.full_name,
+	          			'bio'             : instagramData.user.bio,
+	          			'website'         : instagramData.user.website,
+	          			'profile_picture' : instagramData.user.profile_picture,
+	          			'access_token'    : instagramData.access_token
+	          		};
 
-				User.create(user, function (error) {
-					if (error) return res.status(500).json(error);
+	          		User.create(user, function (err) {
+	          			callback(err, user)
+	          		});	
+	          	}
+	      	}
+	    ], (err, result) => {
+	      	if(err){
+		      	return res.status(500).json({ 
+		      	    success: false, 
+		      	    message: "Something went wrong.", 
+		      	    error: err
+		      	});
+	      	}   
 
-					const token = jwt.sign(instagramData, process.env.jwt_secret, { expiresIn: '5h' });
-					res.cookie('instagram-user-cookies', token);
-
-					return res.redirect('/api/profile');
-				});	
-			}
-		});
+	      	res.redirect('/api/profile');
+	    });
 	}); 
 };
 

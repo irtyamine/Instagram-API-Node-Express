@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const instagramUser = mongoose.Schema({
-	id              : Number,
+	id              : { type: Number, unique: true },
 	username        : String,
 	full_name       : String,
 	bio             : String,
