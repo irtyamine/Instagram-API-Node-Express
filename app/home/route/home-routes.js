@@ -8,6 +8,8 @@ const userMiddleware  = require('../middleware/instagram-user-middleware');
 router.route('/').get(homeController.getHome);
 router.route('/login').get(homeController.getInstagramLogin);
 router.route('/auth/instagram').get(homeController.postInstagramLogin);
+// get profile
 router.route('/profile').get(userMiddleware.authorizeAccess, homeController.getProfile);
+router.route('/logout').get(homeController.getLogout);
 
 module.exports = router;
