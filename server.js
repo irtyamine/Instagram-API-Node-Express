@@ -79,6 +79,11 @@ app.use((req, res, next) => localVariables.initializeVariable(req, res, next));
 */
 cors.initializeCORS(app);
 
+// Initialize passport
+app.use(passport.initialize());
+
+require('./app/home/auth/passport');
+
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Anti csurf attack protection
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

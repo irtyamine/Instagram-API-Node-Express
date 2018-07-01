@@ -1,15 +1,15 @@
 const request = require('request');
-const config = require('../auth/config');
-const User   = require('../model/instagram-user');
+const config  = require('../auth/config');
+const User    = require('../model/instagram-user');
+const jwt     = require('jsonwebtoken');
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// This will make a get request and render the index page for logging in a professional or client
+// get home page
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 module.exports.getHome = (req, res) => {
 	res.status(200).json({ 
 		success: true, 
-		message: "Successfully fetched the home page",
-		user   : req.user ? req.user : "User does not exist"
+		message: "Successfully fetched the home page"
 	});
 };
 
@@ -52,11 +52,10 @@ module.exports.postInstagramLogin = (req, res) => {
 
 		query.exec((err, profiles) => {
 			if(profiles){
-				return res.status(200).json({
-					success : true,
-					message : "Successfully fetched instagram profile",
-					profile : profiles
-				});
+				const token = jwt.sign(instagramData, process.env.jwt_secret, { expiresIn: '5h' });
+				res.cookie('instagram-user-cookies', token);
+
+				return res.redirect('/api/profile');
 			}
 
 			if(!profiles){
@@ -71,15 +70,30 @@ module.exports.postInstagramLogin = (req, res) => {
 				};
 
 				User.create(user, function (error) {
-					if (error) return res.send(error);
+					if (error) return res.status(500).json(error);
 
-					return res.status(200).json({
-						success : true,
-						message : "Successfully fetched instagram profile",
-						profile : user
-					});
+					const token = jwt.sign(instagramData, process.env.jwt_secret, { expiresIn: '5h' });
+					res.cookie('instagram-user-cookies', token);
+
+					return res.redirect('/api/profile');
 				});	
 			}
 		});
 	}); 
 };
+
+// get instagram profile
+module.exports.getProfile = (req, res) => {
+	return res.status(200).json({
+		success : true,
+		message : "Successfully fetched instagram profile",
+		profile : req.user
+	});
+}
+
+// logout instagram profile
+module.exports.getLogout = (req, res) => {
+	req.logout();
+  	res.clearCookie('instagram-user-cookies');
+  	res.redirect('/api');
+}
