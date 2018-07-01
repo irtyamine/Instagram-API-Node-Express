@@ -38,8 +38,17 @@ module.exports.postInstagramLogin = (req, res) => {
 
 	// Start the request
 	request(options, (error, response, userData) => {
-	    let instagramData = JSON.parse(userData);
-		let query         = User.findOne({'username': instagramData.user.username});
+		let instagramData = JSON.parse(userData);
+
+		if(error || instagramData.error_type){
+	        return res.status(500).json({ 
+	            success: false, 
+	            message: "Something went wrong.", 
+	            error: instagramData
+	        });
+	    }
+
+		let query = User.findOne({'username': instagramData.user.username});
 
 		query.exec((err, profiles) => {
 			if(profiles){
