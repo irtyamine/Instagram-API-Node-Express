@@ -106,6 +106,48 @@ module.exports.getProfile = (req, res) => {
 	});
 }
 
+// get instagram recent posts
+module.exports.getInstagramRecentPost = (req, res) => {
+	async.waterfall([
+	  	(callback) => {
+	  		let query = User.findOne({id: req.user.id}).select({'access_token': 1});
+
+	  		query.exec((err, profile) => {
+	  			callback(err, profile);
+	  		});
+	  	}, (profile, callback) => {
+	      // Request option
+	      	let options = {
+	      		url    : `https://api.instagram.com/v1/users/self/media/recent/?access_token=${profile.access_token}`,
+	      		method : 'GET',
+	      		json   : true
+	      	};
+
+	      	request(options, (error, response, userData) => {
+	      		if(userData.meta.error_type){
+	      			return callback(error || userData.meta, userData);
+	      		} 
+
+	      		callback(null, userData);
+	      	});
+	  	}
+	], (err, result) => {
+      	if(err){
+	      	return res.status(500).json({ 
+	      	    success: false, 
+	      	    message: "Something went wrong.", 
+	      	    error: err
+	      	});
+      	}   
+
+      	res.status(200).json({
+      		success: true,
+      		message: "Successfully fetched recent posts",
+      		recentPost: result
+      	});
+	});	
+}
+
 // logout instagram profile
 module.exports.getLogout = (req, res) => {
 	req.logout();

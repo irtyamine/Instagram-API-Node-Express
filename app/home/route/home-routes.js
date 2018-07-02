@@ -10,6 +10,8 @@ router.route('/login').get(homeController.getInstagramLogin);
 router.route('/auth/instagram').get(homeController.postInstagramLogin);
 // get profile
 router.route('/profile').get(userMiddleware.authorizeAccess, homeController.getProfile);
+// get recent posts
+router.route('/recent/posts').get(userMiddleware.authorizeAccess, homeController.getInstagramRecentPost);
 router.route('/logout').get(homeController.getLogout);
 
 module.exports = router;
